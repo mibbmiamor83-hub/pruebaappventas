@@ -3,384 +3,280 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IPTV Player - Neon Glassmorphism</title>
+    <title>Premium Streaming Interface</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.3.5/shaka-player.ui.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.3.5/controls.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/controls.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/shaka-player.ui.min.js"></script>
-
     <style>
         :root {
-            --bg-color: #050505;
-            --neon-blue: #00c3ff;
-            --neon-blue-glow: rgba(0, 195, 255, 0.5);
-            --card-bg: rgba(255, 255, 255, 0.05);
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
+            --neon-blue: #00d4ff;
+            --neon-purple: #9400d3;
+            --bg-dark: #0a0b10;
+            --glass: rgba(255, 255, 255, 0.1);
         }
 
         body {
-            background-color: var(--bg-color);
-            color: #ffffff;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            min-height: 100vh;
+            margin: 0;
+            background-color: var(--bg-dark);
+            color: white;
+            font-family: 'Poppins', sans-serif;
             overflow-x: hidden;
         }
 
-        /* --- Navegación (Categorías) --- */
-        .header {
+        /* --- Header & Search --- */
+        header {
             padding: 20px;
             text-align: center;
-            border-bottom: 1px solid var(--neon-blue-glow);
-            box-shadow: 0 4px 15px rgba(0, 195, 255, 0.2);
-            background: rgba(5, 5, 5, 0.8);
+            background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
             position: sticky;
             top: 0;
             z-index: 100;
+        }
+
+        .search-container {
+            margin-top: 15px;
+        }
+
+        input#search {
+            background: var(--glass);
+            border: 1px solid var(--neon-blue);
+            padding: 12px 20px;
+            border-radius: 25px;
+            color: white;
+            width: 80%;
+            max-width: 400px;
+            outline: none;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
             backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
         }
 
-        .header h1 {
-            margin-bottom: 15px;
-            text-shadow: 0 0 10px var(--neon-blue);
-            font-size: 24px;
-            letter-spacing: 2px;
-        }
-
-        .categories {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: center;
-        }
-
-        .cat-btn {
-            background: var(--card-bg);
-            border: 1px solid var(--neon-blue-glow);
-            color: #fff;
-            padding: 8px 16px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(5px);
-            -webkit-backdrop-filter: blur(5px);
-        }
-
-        .cat-btn:hover, .cat-btn.active {
-            background: rgba(0, 195, 255, 0.2);
-            border-color: var(--neon-blue);
-            box-shadow: 0 0 15px var(--neon-blue);
-            transform: scale(1.05);
-        }
-
-        /* --- Grilla de Canales (Glassmorphism) --- */
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-            gap: 20px;
-            padding: 30px 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .card {
-            background: var(--card-bg);
-            border: 1px solid var(--neon-blue-glow);
-            border-radius: 15px;
-            padding: 15px;
-            height: 180px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            box-shadow: 0 0 10px rgba(0, 195, 255, 0.1);
-            transition: all 0.3s ease;
-        }
-
-        .card:hover {
-            border-color: var(--neon-blue);
-            box-shadow: 0 0 20px rgba(0, 195, 255, 0.8), inset 0 0 15px rgba(0, 195, 255, 0.2);
-            transform: translateY(-8px);
-        }
-
-        .card img {
-            width: 100%;
-            height: 70%;
-            object-fit: contain;
-            filter: drop-shadow(0 0 5px rgba(255,255,255,0.2));
-        }
-
-        .card .name {
-            width: 100%;
-            text-align: center;
-            font-size: 14px;
-            font-weight: 600;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            margin-top: 10px;
-            text-shadow: 0 0 5px rgba(0, 195, 255, 0.5);
-        }
-
-        /* --- Reproductor Overlay --- */
-        .player-overlay {
+        /* --- Player Container (Hidden by default) --- */
+        #player-wrapper {
             display: none;
             position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.95);
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
             z-index: 1000;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-        }
-
-        .close-btn {
-            position: absolute;
-            top: 20px;
-            right: 30px;
-            font-size: 35px;
-            color: #fff;
-            cursor: pointer;
-            z-index: 1001;
-            transition: all 0.3s ease;
-        }
-
-        .close-btn:hover {
-            color: #ff3333;
-            text-shadow: 0 0 15px #ff3333;
-            transform: scale(1.1);
         }
 
         .video-container {
-            width: 90%;
-            max-width: 1000px;
-            box-shadow: 0 0 30px rgba(0, 195, 255, 0.6);
-            border: 2px solid var(--neon-blue);
-            border-radius: 10px;
-            overflow: hidden;
-            background: #000;
-        }
-
-        video {
             width: 100%;
             height: 100%;
         }
 
-        .loader {
-            display: none;
-            color: var(--neon-blue);
-            font-size: 20px;
-            text-shadow: 0 0 10px var(--neon-blue);
-            margin-top: 20vh;
+        #video {
+            width: 100%;
+            height: 100%;
+        }
+
+        .close-player {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: var(--neon-purple);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 1001;
+            box-shadow: 0 0 15px var(--neon-purple);
+            font-weight: bold;
+        }
+
+        /* --- Grid de Canales --- */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 20px;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .channel-card {
+            background: var(--glass);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 15px;
             text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .channel-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+        }
+
+        .channel-card img {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+            margin-bottom: 10px;
+            filter: drop-shadow(0 0 5px rgba(255,255,255,0.2));
+        }
+
+        .channel-card span {
+            font-size: 0.9rem;
+            font-weight: 400;
+            display: block;
+        }
+
+        /* --- Responsive --- */
+        @media (max-width: 600px) {
+            .grid-container {
+                grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+                gap: 10px;
+            }
+            .channel-card img { width: 60px; height: 60px; }
         }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <h1>FUTBOL LIBRE TV - SHAKA</h1>
-        <div class="categories" id="categoriesContainer">
-            </div>
-    </div>
-
-    <div id="loader" class="loader">Cargando canales...</div>
-
-    <div class="grid" id="channelsGrid">
+    <header>
+        <h2 style="color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue);">NEON STREAM</h2>
+        <div class="search-container">
+            <input type="text" id="search" placeholder="Buscar canal...">
         </div>
+    </header>
 
-    <div class="player-overlay" id="playerOverlay">
-        <div class="close-btn" onclick="closePlayer()">×</div>
-        <div class="video-container" id="videoContainer">
+    <div id="player-wrapper">
+        <button class="close-player" onclick="closePlayer()">✕ CERRAR</button>
+        <div class="video-container" id="video-parent">
             <video id="video" autoplay></video>
         </div>
     </div>
 
+    <div class="grid-container" id="channel-grid">
+        </div>
+
     <script>
-        const jsonUrl = 'https://raw.githubusercontent.com/MAIKOL-BLACK/playpre/main/canales.json';
         let allChannels = [];
         let player;
-        let currentChannelData = null;
+        let ui;
 
-        document.addEventListener('DOMContentLoaded', initApp);
-
+        // Inicializar Shaka Player
         async function initApp() {
-            // Inicializar Shaka Player
             shaka.polyfill.installAll();
             if (shaka.Player.isBrowserSupported()) {
-                initShakaPlayer();
-                await fetchChannels();
+                initPlayer();
             } else {
-                alert('Tu navegador o WebView no soporta Shaka Player.');
+                console.error('Navegador no compatible con Shaka Player');
             }
+            loadChannels();
         }
 
-        function initShakaPlayer() {
+        async function initPlayer() {
             const video = document.getElementById('video');
-            const videoContainer = document.getElementById('videoContainer');
+            const videoParent = document.getElementById('video-parent');
             
             player = new shaka.Player(video);
-            const ui = new shaka.ui.Overlay(player, videoContainer, video);
+            
+            // Configuración de UI oficial
+            ui = new shaka.ui.Overlay(player, videoParent, video);
 
-            // Filtro de Red para inyectar Headers (User-Agent, Origin, etc.)
-            // Nota: En un WebView de Android esto funcionará perfectamente si los CORS están gestionados.
+            // Filtro de red para Headers (Tigo Sports / Others)
             player.getNetworkingEngine().registerRequestFilter((type, request) => {
-                if (currentChannelData && currentChannelData.headers) {
-                    const headers = currentChannelData.headers;
-                    if (headers['User-Agent']) request.headers['User-Agent'] = headers['User-Agent'];
-                    if (headers['Origin']) request.headers['Origin'] = headers['Origin'];
-                    if (headers['Referer']) request.headers['Referer'] = headers['Referer'];
+                if (type == shaka.net.NetworkingEngine.RequestType.MANIFEST || 
+                    type == shaka.net.NetworkingEngine.RequestType.SEGMENT) {
+                    request.headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
+                    request.headers['Origin'] = 'https://tigosports.com.py'; 
                 }
             });
 
-            player.addEventListener('error', onErrorEvent);
+            player.addEventListener('error', onPlayerError);
         }
 
-        async function fetchChannels() {
-            document.getElementById('loader').style.display = 'block';
+        async function loadChannels() {
+            const url = 'https://raw.githubusercontent.com/MAIKOL-BLACK/playpre/main/canales.json';
             try {
-                const response = await fetch(jsonUrl);
+                const response = await fetch(url);
                 const data = await response.json();
                 
-                let categoriesSet = new Set();
-                allChannels = [];
-
-                // Recorrer el JSON según la estructura especificada
-                data.forEach(categoryObj => {
-                    const catName = categoryObj.name || 'OTROS';
-                    
-                    if (categoryObj.samples && Array.isArray(categoryObj.samples)) {
-                        categoryObj.samples.forEach(sample => {
-                            // Validación: Saltar si la URL está vacía o no existe
-                            if (sample.url && sample.url.trim() !== '') {
-                                categoriesSet.add(catName);
-                                allChannels.push({
-                                    category: catName,
-                                    name: sample.name || 'Canal Desconocido',
-                                    url: sample.url,
-                                    icono: sample.icono || '',
-                                    drm_license_uri: sample.drm_license_uri || null,
-                                    headers: sample.headers || null
-                                });
-                            }
+                // Mapeo Crítico: El JSON es un array de categorías
+                data.forEach(category => {
+                    if (category.samples) {
+                        category.samples.forEach(sample => {
+                            allChannels.push(sample);
                         });
                     }
                 });
 
-                renderCategories(['TODOS', ...Array.from(categoriesSet)]);
-                renderChannels(allChannels);
-
-            } catch (error) {
-                console.error('Error obteniendo el JSON:', error);
-                alert('No se pudo cargar la lista de canales.');
-            } finally {
-                document.getElementById('loader').style.display = 'none';
+                displayChannels(allChannels);
+            } catch (e) {
+                console.error("Error cargando JSON", e);
             }
         }
 
-        function renderCategories(categories) {
-            const container = document.getElementById('categoriesContainer');
-            container.innerHTML = '';
-
-            categories.forEach((cat, index) => {
-                const btn = document.createElement('button');
-                btn.className = `cat-btn ${index === 0 ? 'active' : ''}`;
-                btn.innerText = cat;
-                btn.onclick = () => {
-                    // Actualizar botones activos
-                    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    
-                    // Filtrar
-                    if (cat === 'TODOS') {
-                        renderChannels(allChannels);
-                    } else {
-                        const filtered = allChannels.filter(c => c.category === cat);
-                        renderChannels(filtered);
-                    }
-                };
-                container.appendChild(btn);
-            });
-        }
-
-        function renderChannels(channels) {
-            const grid = document.getElementById('channelsGrid');
+        function displayChannels(channels) {
+            const grid = document.getElementById('channel-grid');
             grid.innerHTML = '';
 
             channels.forEach(channel => {
                 const card = document.createElement('div');
-                card.className = 'card';
+                card.className = 'channel-card';
                 card.onclick = () => playChannel(channel);
 
-                const img = document.createElement('img');
-                img.src = channel.icono || 'https://via.placeholder.com/150x100.png?text=Sin+Logo';
-                img.alt = channel.name;
-                // Manejo de error de imagen para que no rompa el diseño
-                img.onerror = function() { this.src = 'https://via.placeholder.com/150x100.png?text=Sin+Logo'; };
-
-                const nameDiv = document.createElement('div');
-                nameDiv.className = 'name';
-                nameDiv.innerText = channel.name;
-
-                card.appendChild(img);
-                card.appendChild(nameDiv);
+                card.innerHTML = `
+                    <img src="${channel.icono}" onerror="this.src='https://via.placeholder.com/80?text=TV'">
+                    <span>${channel.name}</span>
+                `;
                 grid.appendChild(card);
             });
         }
 
-        async function playChannel(channel) {
-            currentChannelData = channel;
-            const overlay = document.getElementById('playerOverlay');
-            overlay.style.display = 'flex';
-
-            // Resetear configuración DRM previa
-            player.configure({ drm: { servers: {} } });
-
-            // Soporte ClearKey (DRM)
-            if (channel.drm_license_uri) {
-                player.configure({
-                    drm: {
-                        servers: {
-                            'org.w3.clearkey': channel.drm_license_uri
-                        }
-                    }
-                });
+        async function playChannel(item) {
+            document.getElementById('player-wrapper').style.display = 'block';
+            
+            const drmConfig = {};
+            if (item.drm_license_uri) {
+                // Configuración de ClearKey DRM
+                drmConfig.servers = {
+                    'org.w3.clearkey': item.drm_license_uri
+                };
             }
 
             try {
-                await player.load(channel.url);
-                console.log('El canal se cargó correctamente.');
-            } catch (error) {
-                onError(error);
+                await player.configure({
+                    drm: drmConfig
+                });
+
+                await player.load(item.url);
+                console.log('Reproduciendo:', item.name);
+            } catch (e) {
+                onPlayerError(e);
             }
         }
 
         function closePlayer() {
-            const overlay = document.getElementById('playerOverlay');
-            overlay.style.display = 'none';
+            document.getElementById('player-wrapper').style.display = 'none';
             player.unload();
-            currentChannelData = null;
         }
 
-        function onErrorEvent(event) {
-            onError(event.detail);
+        function onPlayerError(event) {
+            console.error('Error en el reproductor', event);
+            alert("Error al cargar el stream. Verifique la fuente o el DRM.");
         }
 
-        function onError(error) {
-            console.error('Código de Error:', error.code, 'Objeto:', error);
-            alert(`Error al reproducir el stream. Código: ${error.code}`);
-        }
+        // Buscador en tiempo real
+        document.getElementById('search').addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            const filtered = allChannels.filter(c => c.name.toLowerCase().includes(term));
+            displayChannels(filtered);
+        });
+
+        document.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
-  </html>
-  
+</html>
