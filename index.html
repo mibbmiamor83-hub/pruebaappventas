@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPTV Player - Neon Glassmorphism</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/controls.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/shaka-player.ui.min.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #050505;
+            --neon-blue: #00c3ff;
+            --neon-blue-glow: rgba(0, 195, 255, 0.5);
+            --card-bg: rgba(255, 255, 255, 0.05);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: #ffffff;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* --- Navegación (Categorías) --- */
+        .header {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid var(--neon-blue-glow);
+            box-shadow: 0 4px 15px rgba(0, 195, 255, 0.2);
+            background: rgba(5, 5, 5, 0.8);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            margin-bottom: 15px;
+            text-shadow: 0 0 10px var(--neon-blue);
+            font-size: 24px;
+            letter-spacing: 2px;
+        }
+
+        .categories {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .cat-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--neon-blue-glow);
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+
+        .cat-btn:hover, .cat-btn.active {
+            background: rgba(0, 195, 255, 0.2);
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 15px var(--neon-blue);
+            transform: scale(1.05);
+        }
+
+        /* --- Grilla de Canales (Glassmorphism) --- */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 20px;
+            padding: 30px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--neon-blue-glow);
+            border-radius: 15px;
+            padding: 15px;
+            height: 180px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 0 10px rgba(0, 195, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 20px rgba(0, 195, 255, 0.8), inset 0 0 15px rgba(0, 195, 255, 0.2);
+            transform: translateY(-8px);
+        }
+
+        .card img {
+            width: 100%;
+            height: 70%;
+            object-fit: contain;
+            filter: drop-shadow(0 0 5px rgba(255,255,255,0.2));
+        }
+
+        .card .name {
+            width: 100%;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: 10px;
+            text-shadow: 0 0 5px rgba(0, 195, 255, 0.5);
+        }
+
+        /* --- Reproductor Overlay --- */
+        .player-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 1000;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            font-size: 35px;
+            color: #fff;
+            cursor: pointer;
+            z-index: 1001;
+            transition: all 0.3s ease;
+        }
+
+        .close-btn:hover {
+            color: #ff3333;
+            text-shadow: 0 0 15px #ff3333;
+            transform: scale(1.1);
+        }
+
+        .video-container {
+            width: 90%;
+            max-width: 1000px;
+            box-shadow: 0 0 30px rgba(0, 195, 255, 0.6);
+            border: 2px solid var(--neon-blue);
+            border-radius: 10px;
+            overflow: hidden;
+            background: #000;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+        }
+
+        .loader {
+            display: none;
+            color: var(--neon-blue);
+            font-size: 20px;
+            text-shadow: 0 0 10px var(--neon-blue);
+            margin-top: 20vh;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>FUTBOL LIBRE TV - SHAKA</h1>
+        <div class="categories" id="categoriesContainer">
+            </div>
+    </div>
+
+    <div id="loader" class="loader">Cargando canales...</div>
+
+    <div class="grid" id="channelsGrid">
+        </div>
+
+    <div class="player-overlay" id="playerOverlay">
+        <div class="close-btn" onclick="closePlayer()">×</div>
+        <div class="video-container" id="videoContainer">
+            <video id="video" autoplay></video>
+        </div>
+    </div>
+
+    <script>
+        const jsonUrl = 'https://raw.githubusercontent.com/MAIKOL-BLACK/playpre/main/canales.json';
+        let allChannels = [];
+        let player;
+        let currentChannelData = null;
+
+        document.addEventListener('DOMContentLoaded', initApp);
+
+        async function initApp() {
+            // Inicializar Shaka Player
+            shaka.polyfill.installAll();
+            if (shaka.Player.isBrowserSupported()) {
+                initShakaPlayer();
+                await fetchChannels();
+            } else {
+                alert('Tu navegador o WebView no soporta Shaka Player.');
+            }
+        }
+
+        function initShakaPlayer() {
+            const video = document.getElementById('video');
+            const videoContainer = document.getElementById('videoContainer');
+            
+            player = new shaka.Player(video);
+            const ui = new shaka.ui.Overlay(player, videoContainer, video);
+
+            // Filtro de Red para inyectar Headers (User-Agent, Origin, etc.)
+            // Nota: En un WebView de Android esto funcionará perfectamente si los CORS están gestionados.
+            player.getNetworkingEngine().registerRequestFilter((type, request) => {
+                if (currentChannelData && currentChannelData.headers) {
+                    const headers = currentChannelData.headers;
+                    if (headers['User-Agent']) request.headers['User-Agent'] = headers['User-Agent'];
+                    if (headers['Origin']) request.headers['Origin'] = headers['Origin'];
+                    if (headers['Referer']) request.headers['Referer'] = headers['Referer'];
+                }
+            });
+
+            player.addEventListener('error', onErrorEvent);
+        }
+
+        async function fetchChannels() {
+            document.getElementById('loader').style.display = 'block';
+            try {
+                const response = await fetch(jsonUrl);
+                const data = await response.json();
+                
+                let categoriesSet = new Set();
+                allChannels = [];
+
+                // Recorrer el JSON según la estructura especificada
+                data.forEach(categoryObj => {
+                    const catName = categoryObj.name || 'OTROS';
+                    
+                    if (categoryObj.samples && Array.isArray(categoryObj.samples)) {
+                        categoryObj.samples.forEach(sample => {
+                            // Validación: Saltar si la URL está vacía o no existe
+                            if (sample.url && sample.url.trim() !== '') {
+                                categoriesSet.add(catName);
+                                allChannels.push({
+                                    category: catName,
+                                    name: sample.name || 'Canal Desconocido',
+                                    url: sample.url,
+                                    icono: sample.icono || '',
+                                    drm_license_uri: sample.drm_license_uri || null,
+                                    headers: sample.headers || null
+                                });
+                            }
+                        });
+                    }
+                });
+
+                renderCategories(['TODOS', ...Array.from(categoriesSet)]);
+                renderChannels(allChannels);
+
+            } catch (error) {
+                console.error('Error obteniendo el JSON:', error);
+                alert('No se pudo cargar la lista de canales.');
+            } finally {
+                document.getElementById('loader').style.display = 'none';
+            }
+        }
+
+        function renderCategories(categories) {
+            const container = document.getElementById('categoriesContainer');
+            container.innerHTML = '';
+
+            categories.forEach((cat, index) => {
+                const btn = document.createElement('button');
+                btn.className = `cat-btn ${index === 0 ? 'active' : ''}`;
+                btn.innerText = cat;
+                btn.onclick = () => {
+                    // Actualizar botones activos
+                    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    // Filtrar
+                    if (cat === 'TODOS') {
+                        renderChannels(allChannels);
+                    } else {
+                        const filtered = allChannels.filter(c => c.category === cat);
+                        renderChannels(filtered);
+                    }
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        function renderChannels(channels) {
+            const grid = document.getElementById('channelsGrid');
+            grid.innerHTML = '';
+
+            channels.forEach(channel => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.onclick = () => playChannel(channel);
+
+                const img = document.createElement('img');
+                img.src = channel.icono || 'https://via.placeholder.com/150x100.png?text=Sin+Logo';
+                img.alt = channel.name;
+                // Manejo de error de imagen para que no rompa el diseño
+                img.onerror = function() { this.src = 'https://via.placeholder.com/150x100.png?text=Sin+Logo'; };
+
+                const nameDiv = document.createElement('div');
+                nameDiv.className = 'name';
+                nameDiv.innerText = channel.name;
+
+                card.appendChild(img);
+                card.appendChild(nameDiv);
+                grid.appendChild(card);
+            });
+        }
+
+        async function playChannel(channel) {
+            currentChannelData = channel;
+            const overlay = document.getElementById('playerOverlay');
+            overlay.style.display = 'flex';
+
+            // Resetear configuración DRM previa
+            player.configure({ drm: { servers: {} } });
+
+            // Soporte ClearKey (DRM)
+            if (channel.drm_license_uri) {
+                player.configure({
+                    drm: {
+                        servers: {
+                            'org.w3.clearkey': channel.drm_license_uri
+                        }
+                    }
+                });
+            }
+
+            try {
+                await player.load(channel.url);
+                console.log('El canal se cargó correctamente.');
+            } catch (error) {
+                onError(error);
+            }
+        }
+
+        function closePlayer() {
+            const overlay = document.getElementById('playerOverlay');
+            overlay.style.display = 'none';
+            player.unload();
+            currentChannelData = null;
+        }
+
+        function onErrorEvent(event) {
+            onError(event.detail);
+        }
+
+        function onError(error) {
+            console.error('Código de Error:', error.code, 'Objeto:', error);
+            alert(`Error al reproducir el stream. Código: ${error.code}`);
+        }
+    </script>
+</body>
+  </html>
+  
